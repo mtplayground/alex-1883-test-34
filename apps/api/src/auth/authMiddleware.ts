@@ -22,9 +22,9 @@ function bearerTokenFromHeader(headerValue: string | undefined): string {
     throw new HttpError(401, "Missing Authorization header", "AUTH_REQUIRED");
   }
 
-  const [scheme, token, ...extra] = headerValue.split(/\s+/);
+  const [scheme, token, ...extra] = headerValue.trim().split(/\s+/);
 
-  if (scheme !== "Bearer" || !token || extra.length > 0) {
+  if (scheme?.toLowerCase() !== "bearer" || !token || extra.length > 0) {
     throw new HttpError(401, "Invalid Authorization header", "AUTH_INVALID");
   }
 

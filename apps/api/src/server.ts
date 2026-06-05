@@ -4,7 +4,7 @@ import { requireAuth } from "./auth/authMiddleware.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { feedRouter } from "./feed/feedRoutes.js";
-import { isHttpError } from "./http/errors.js";
+import { HttpError, errorResponseBody, statusCodeForError } from "./http/errors.js";
 import { listPostsByUser, postRouter } from "./posts/postRoutes.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 import { uploadMyAvatar } from "./users/avatarRoute.js";
@@ -43,34 +43,29 @@ const healthHandler: RequestHandler = (_req, res) => {
 };
 
 const notFoundHandler: RequestHandler = (req, res) => {
-  res.status(404).json({
-    error: {
-      message: `Route not found: ${req.method} ${req.originalUrl}`
-    }
-  });
+  const error = new HttpError(
+    404,
+    `Route not found: ${req.method} ${req.originalUrl}`,
+    "ROUTE_NOT_FOUND"
+  );
+
+  res.status(error.statusCode).json(errorResponseBody(error));
 };
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const statusCode = isHttpError(err) ? err.statusCode : 500;
+  const statusCode = statusCodeForError(err);
 
-  console.error("Unhandled API error", {
-    name: err instanceof Error ? err.name : undefined,
-    code:
-      typeof err === "object" && err !== null && "code" in err ? err.code : undefined,
-    message: err instanceof Error ? err.message : String(err),
-    stack: err instanceof Error ? err.stack : undefined
-  });
+  if (statusCode >= 500) {
+    console.error("Unhandled API error", {
+      name: err instanceof Error ? err.name : undefined,
+      code:
+        typeof err === "object" && err !== null && "code" in err ? err.code : undefined,
+      message: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined
+    });
+  }
 
-  res.status(statusCode).json({
-    error: {
-      message:
-        statusCode >= 500
-          ? "Internal server error"
-          : err instanceof Error
-            ? err.message
-            : "Request failed"
-    }
-  });
+  res.status(statusCode).json(errorResponseBody(err));
 };
 
 app.get("/", rootHandler);
