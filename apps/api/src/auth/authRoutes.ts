@@ -10,6 +10,7 @@ import {
 import { readCookieValue } from "./cookies.js";
 import { HttpError } from "../http/errors.js";
 import { provisionGoogleUser } from "../users/provisionGoogleUser.js";
+import { issueJwtForUser } from "./jwt.js";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "google_oauth_state";
 const OAUTH_STATE_MAX_AGE_MS = 10 * 60 * 1000;
@@ -63,8 +64,11 @@ const completeGoogleOAuth: RequestHandler = async (req, res, next) => {
     const accessToken = await exchangeGoogleOAuthCode(code);
     const profile = await fetchGoogleUserProfile(accessToken);
     const user = await provisionGoogleUser(profile);
+    const token = issueJwtForUser(user);
 
     res.json({
+      token,
+      tokenType: "Bearer",
       user
     });
   } catch (error) {
