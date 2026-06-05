@@ -1,6 +1,7 @@
 target/
 node_modules/
 dist/
+*.tsbuildinfo
 .env.production
 .db_decision
 .storage_decision
