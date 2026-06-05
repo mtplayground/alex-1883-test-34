@@ -1,17 +1,53 @@
 import { useAuth } from "./AuthContext";
 
-export function SignInButton() {
-  const { isAuthenticated, signIn, signOut } = useAuth();
+function initialsForUsername(username: string): string {
+  return username.slice(0, 1).toUpperCase();
+}
 
-  if (isAuthenticated) {
+export function SignInButton() {
+  const { isAuthenticated, signIn, signOut, status, user } = useAuth();
+
+  if (status === "loading") {
     return (
       <button
-        className="rounded-md border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 shadow-sm transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-        onClick={signOut}
+        className="rounded-md border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-400"
+        disabled
         type="button"
       >
-        Sign out
+        Loading
       </button>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    return (
+      <div className="flex min-w-0 items-center gap-3 rounded-md border border-slate-800 bg-slate-900/90 px-3 py-2 shadow-sm">
+        {user.avatarUrl ? (
+          <img
+            alt={`${user.username} avatar`}
+            className="h-9 w-9 shrink-0 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+            src={user.avatarUrl}
+          />
+        ) : (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-300 text-sm font-semibold text-slate-950">
+            {initialsForUsername(user.username)}
+          </span>
+        )}
+        <div className="hidden min-w-0 text-left sm:block">
+          <p className="max-w-40 truncate text-sm font-semibold text-slate-100">
+            {user.username}
+          </p>
+          <p className="max-w-48 truncate text-xs text-slate-400">{user.email}</p>
+        </div>
+        <button
+          className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+          onClick={signOut}
+          type="button"
+        >
+          Sign out
+        </button>
+      </div>
     );
   }
 
