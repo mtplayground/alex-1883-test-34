@@ -1,14 +1,9 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
+import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 
 const app = express();
-const host = process.env.HOST ?? "0.0.0.0";
-const port = Number.parseInt(process.env.PORT ?? "8080", 10);
-
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  console.error("Invalid PORT value", { port: process.env.PORT });
-  process.exit(1);
-}
+const { host, port } = appConfig.server;
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1mb" }));

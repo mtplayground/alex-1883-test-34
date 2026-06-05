@@ -2,6 +2,9 @@ target/
 node_modules/
 dist/
 *.tsbuildinfo
+.env
+.env.*
+!.env.example
 .env.production
 .db_decision
 .storage_decision
