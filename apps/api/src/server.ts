@@ -1,6 +1,8 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
+import { authRouter } from "./auth/authRoutes.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
+import { isHttpError } from "./http/errors.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 
 const app = express();
@@ -37,6 +39,8 @@ const notFoundHandler: RequestHandler = (req, res) => {
 };
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+  const statusCode = isHttpError(err) ? err.statusCode : 500;
+
   console.error("Unhandled API error", {
     name: err instanceof Error ? err.name : undefined,
     code:
@@ -45,15 +49,21 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     stack: err instanceof Error ? err.stack : undefined
   });
 
-  res.status(500).json({
+  res.status(statusCode).json({
     error: {
-      message: "Internal server error"
+      message:
+        statusCode >= 500
+          ? "Internal server error"
+          : err instanceof Error
+            ? err.message
+            : "Request failed"
     }
   });
 };
 
 app.get("/", rootHandler);
 app.get("/api/health", healthHandler);
+app.use("/api/auth", authRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
