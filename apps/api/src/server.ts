@@ -9,7 +9,13 @@ import { listPostsByUser, postRouter } from "./posts/postRoutes.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 import { uploadMyAvatar } from "./users/avatarRoute.js";
 import { getMe, patchMe } from "./users/meRoute.js";
-import { getUserProfile } from "./users/profileRoute.js";
+import {
+  followUser,
+  getUserProfile,
+  listFollowers,
+  listFollowing,
+  unfollowUser
+} from "./users/profileRoute.js";
 
 const app = express();
 const { host, port } = appConfig.server;
@@ -78,6 +84,10 @@ app.post(
   uploadMyAvatar
 );
 app.get("/users/:username/posts", listPostsByUser);
+app.get("/users/:username/followers", listFollowers);
+app.get("/users/:username/following", listFollowing);
+app.post("/users/:username/follow", requireAuth, followUser);
+app.delete("/users/:username/follow", requireAuth, unfollowUser);
 app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
 app.use("/feed", feedRouter);
