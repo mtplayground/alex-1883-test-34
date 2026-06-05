@@ -3,6 +3,7 @@ import { authRouter } from "./auth/authRoutes.js";
 import { requireAuth } from "./auth/authMiddleware.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
+import { feedRouter } from "./feed/feedRoutes.js";
 import { isHttpError } from "./http/errors.js";
 import { listPostsByUser, postRouter } from "./posts/postRoutes.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
@@ -79,6 +80,7 @@ app.post(
 app.get("/users/:username/posts", listPostsByUser);
 app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
+app.use("/feed", feedRouter);
 app.use("/posts", postRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
