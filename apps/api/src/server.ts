@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
 import { authRouter } from "./auth/authRoutes.js";
 import { requireAuth } from "./auth/authMiddleware.js";
+import { logGoogleOAuthConfigSelfCheck } from "./auth/googleOAuth.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { feedRouter } from "./feed/feedRoutes.js";
@@ -23,6 +24,8 @@ const allowedCorsOrigins = appConfig.server.corsOrigin
   ?.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+logGoogleOAuthConfigSelfCheck();
 
 app.disable("x-powered-by");
 app.use((req, res, next) => {

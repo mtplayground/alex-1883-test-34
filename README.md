@@ -22,7 +22,9 @@ Important deployment values:
 - `JWT_SECRET`: long random signing secret.
 - `OBJECT_STORAGE_*`: S3-compatible bucket credentials and public URL.
 - `OBJECT_STORAGE_PREFIX`: required object-key prefix for uploads.
-- `GOOGLE_OAUTH_CALLBACK_URL`: API callback URL, for example `https://api.example.com/api/auth/google/callback`.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Google OAuth 2.0 client credentials.
+- `GOOGLE_CALLBACK_URL`: API callback URL, for example `https://api.example.com/api/auth/google/callback`.
+- `GOOGLE_BASE_URL`: optional API origin used to derive `/api/auth/google/callback` when `GOOGLE_CALLBACK_URL` is not set.
 - `VITE_API_BASE_URL`: public API origin used by the browser app at build time.
 - `CORS_ORIGIN`: comma-separated browser origins allowed to call the API.
 - `PORT`: API port. Defaults to `8080`.
