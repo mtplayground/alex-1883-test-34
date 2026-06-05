@@ -1,9 +1,11 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
 import { authRouter } from "./auth/authRoutes.js";
+import { requireAuth } from "./auth/authMiddleware.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { isHttpError } from "./http/errors.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
+import { getMe } from "./users/meRoute.js";
 
 const app = express();
 const { host, port } = appConfig.server;
@@ -63,6 +65,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 
 app.get("/", rootHandler);
 app.get("/api/health", healthHandler);
+app.get("/me", requireAuth, getMe);
 app.use("/api/auth", authRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
