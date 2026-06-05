@@ -1,5 +1,9 @@
 target/
 node_modules/
+dist/
+.env.production
+.db_decision
+.storage_decision
 .gh_token
 .claude/
 .database_url
