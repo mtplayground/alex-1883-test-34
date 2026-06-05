@@ -6,6 +6,9 @@ type FeedMode = "followed" | "global";
 
 type FeedPost = {
   caption: string | null;
+  counts: {
+    likes: number;
+  };
   createdAt: string;
   id: string;
   imageUrl: string;
@@ -21,6 +24,14 @@ type FeedPost = {
 type FeedResponse = {
   nextCursor: string | null;
   posts: FeedPost[];
+};
+
+type LikeResponse = {
+  counts: {
+    likes: number;
+  };
+  liked: boolean;
+  postId: string;
 };
 
 type FeedLoadState =
@@ -81,6 +92,12 @@ function requestInit(token: string | null, signal?: AbortSignal): RequestInit {
   };
 }
 
+function authHeaders(token: string): HeadersInit {
+  return {
+    Authorization: `Bearer ${token}`
+  };
+}
+
 function mergePosts(currentPosts: FeedPost[], nextPosts: FeedPost[]): FeedPost[] {
   const seenPostIds = new Set(currentPosts.map((post) => post.id));
   const uniqueNextPosts = nextPosts.filter((post) => !seenPostIds.has(post.id));
@@ -108,7 +125,41 @@ function AuthorAvatar({ post }: { post: FeedPost }) {
 }
 
 function FeedPostCard({ post }: { post: FeedPost }) {
+  const { signIn, token } = useAuth();
+  const [isLiking, setIsLiking] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.counts.likes);
+  const [likeError, setLikeError] = useState<string | null>(null);
   const postDate = useMemo(() => formatPostDate(post.createdAt), [post.createdAt]);
+
+  function handleLikeClick(): void {
+    if (!token) {
+      signIn();
+      return;
+    }
+
+    if (isLiking) {
+      return;
+    }
+
+    setIsLiking(true);
+    setLikeError(null);
+
+    void apiJson<LikeResponse>(`/posts/${encodeURIComponent(post.id)}/like`, {
+      headers: authHeaders(token),
+      method: liked ? "DELETE" : "POST"
+    })
+      .then((response) => {
+        setLiked(response.liked);
+        setLikeCount(response.counts.likes);
+      })
+      .catch((error: unknown) => {
+        setLikeError(error instanceof Error ? error.message : "Unable to update like");
+      })
+      .finally(() => {
+        setIsLiking(false);
+      });
+  }
 
   return (
     <article className="overflow-hidden rounded-md border border-slate-800 bg-slate-900/70">
@@ -148,6 +199,32 @@ function FeedPostCard({ post }: { post: FeedPost }) {
       <p className="whitespace-pre-wrap px-4 py-4 text-sm leading-6 text-slate-200">
         {post.caption || "No caption."}
       </p>
+      <div className="border-t border-slate-800 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-300 ${
+              liked
+                ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                : "border border-slate-700 text-slate-100 hover:border-slate-500 hover:bg-slate-800"
+            }`}
+            disabled={isLiking}
+            onClick={handleLikeClick}
+            type="button"
+          >
+            {liked ? "Liked" : "Like"}
+          </button>
+          <span className="text-sm text-slate-400">
+            {likeCount} {likeCount === 1 ? "like" : "likes"}
+          </span>
+          <a
+            className="ml-auto text-sm font-medium text-slate-400 transition hover:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            href={`/posts/${post.id}`}
+          >
+            Comments
+          </a>
+        </div>
+        {likeError ? <p className="mt-2 text-sm text-rose-200">{likeError}</p> : null}
+      </div>
     </article>
   );
 }
