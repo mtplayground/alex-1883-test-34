@@ -4,7 +4,7 @@ import { requireAuth } from "./auth/authMiddleware.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { isHttpError } from "./http/errors.js";
-import { postRouter } from "./posts/postRoutes.js";
+import { listPostsByUser, postRouter } from "./posts/postRoutes.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 import { uploadMyAvatar } from "./users/avatarRoute.js";
 import { getMe, patchMe } from "./users/meRoute.js";
@@ -76,6 +76,7 @@ app.post(
   express.raw({ limit: "5mb", type: "image/*" }),
   uploadMyAvatar
 );
+app.get("/users/:username/posts", listPostsByUser);
 app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
 app.use("/posts", postRouter);
