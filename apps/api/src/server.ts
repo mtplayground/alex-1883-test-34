@@ -1,6 +1,7 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
+import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 
 const app = express();
 const { host, port } = appConfig.server;
@@ -19,6 +20,9 @@ const healthHandler: RequestHandler = (_req, res) => {
   res.json({
     database: {
       configured: isDatabaseConfigured()
+    },
+    objectStorage: {
+      configured: isObjectStorageConfigured()
     },
     status: "ok"
   });
