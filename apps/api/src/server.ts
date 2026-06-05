@@ -6,6 +6,7 @@ import { isDatabaseConfigured } from "./db/prisma.js";
 import { isHttpError } from "./http/errors.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 import { getMe } from "./users/meRoute.js";
+import { getUserProfile } from "./users/profileRoute.js";
 
 const app = express();
 const { host, port } = appConfig.server;
@@ -66,6 +67,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.get("/", rootHandler);
 app.get("/api/health", healthHandler);
 app.get("/me", requireAuth, getMe);
+app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
