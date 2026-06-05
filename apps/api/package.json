@@ -5,12 +5,16 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run db:generate && tsc -p tsconfig.json",
+    "db:generate": "prisma generate --schema ../../prisma/schema.prisma",
+    "db:migrate": "prisma migrate deploy --schema ../../prisma/schema.prisma",
+    "db:validate": "prisma validate --schema ../../prisma/schema.prisma",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "npm run db:generate && tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@prisma/client": "^6.18.0",
     "express": "^4.19.2"
   }
 }

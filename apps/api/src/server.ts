@@ -1,4 +1,5 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from "express";
+import { isDatabaseConfigured } from "./db/prisma.js";
 
 const app = express();
 const host = process.env.HOST ?? "0.0.0.0";
@@ -21,6 +22,9 @@ const rootHandler: RequestHandler = (_req, res) => {
 
 const healthHandler: RequestHandler = (_req, res) => {
   res.json({
+    database: {
+      configured: isDatabaseConfigured()
+    },
     status: "ok"
   });
 };
