@@ -1,3 +1,5 @@
+import { SignInButton } from "./features/auth/SignInButton";
+
 const workspaceItems = [
   "React frontend scaffolded with Vite",
   "Tailwind CSS pipeline configured",
@@ -7,6 +9,11 @@ const workspaceItems = [
 export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="fixed inset-x-0 top-0 z-10 border-b border-slate-900/80 bg-slate-950/90 backdrop-blur">
+        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-end px-6">
+          <SignInButton />
+        </div>
+      </header>
       <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-6 py-16">
         <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-300">
           Issue #1
