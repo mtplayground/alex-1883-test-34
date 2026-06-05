@@ -24,6 +24,45 @@ type ProfileResponse = {
   user: ProfileUser;
 };
 
+type FollowListKind = "followers" | "following";
+
+type FollowListResponse = {
+  nextCursor: string | null;
+  users: ProfileUser[];
+};
+
+type FollowListState =
+  | {
+      error: null;
+      nextCursor: null;
+      status: "idle";
+      users: ProfileUser[];
+    }
+  | {
+      error: null;
+      nextCursor: null;
+      status: "loading";
+      users: ProfileUser[];
+    }
+  | {
+      error: string;
+      nextCursor: null;
+      status: "error";
+      users: ProfileUser[];
+    }
+  | {
+      error: null;
+      nextCursor: string | null;
+      status: "loaded";
+      users: ProfileUser[];
+    };
+
+type FollowToggleResponse = {
+  counts: Pick<ProfileCounts, "followers" | "following">;
+  followed: boolean;
+  user: ProfileUser;
+};
+
 type ProfileLoadState =
   | {
       error: null;
@@ -95,27 +134,149 @@ function ProfileAvatar({ user }: { user: ProfileUser }) {
   );
 }
 
-function ProfileStats({ counts }: { counts: ProfileCounts }) {
+function ProfileStats({
+  counts,
+  onSelectFollowList
+}: {
+  counts: ProfileCounts;
+  onSelectFollowList: (kind: FollowListKind) => void;
+}) {
   const stats = [
-    ["Posts", counts.posts],
-    ["Followers", counts.followers],
-    ["Following", counts.following]
+    ["Posts", counts.posts, null],
+    ["Followers", counts.followers, "followers"],
+    ["Following", counts.following, "following"]
   ] as const;
 
   return (
     <dl className="grid grid-cols-3 gap-2 text-center sm:max-w-md">
-      {stats.map(([label, value]) => (
-        <div
-          className="rounded-md border border-slate-800 bg-slate-900/70 p-3"
-          key={label}
-        >
-          <dt className="text-xs uppercase text-slate-500">{label}</dt>
-          <dd className="mt-1 text-lg font-semibold text-slate-100">
-            {formatCount(value)}
-          </dd>
-        </div>
-      ))}
+      {stats.map(([label, value, followListKind]) => {
+        const content = (
+          <>
+            <dt className="text-xs uppercase text-slate-500">{label}</dt>
+            <dd className="mt-1 text-lg font-semibold text-slate-100">
+              {formatCount(value)}
+            </dd>
+          </>
+        );
+
+        if (!followListKind) {
+          return (
+            <div
+              className="rounded-md border border-slate-800 bg-slate-900/70 p-3"
+              key={label}
+            >
+              {content}
+            </div>
+          );
+        }
+
+        return (
+          <button
+            className="rounded-md border border-slate-800 bg-slate-900/70 p-3 transition hover:border-slate-600 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+            key={label}
+            onClick={() => onSelectFollowList(followListKind)}
+            type="button"
+          >
+            {content}
+          </button>
+        );
+      })}
     </dl>
+  );
+}
+
+function FollowListAvatar({ user }: { user: ProfileUser }) {
+  if (user.avatarUrl) {
+    return (
+      <img
+        alt={`${user.username} avatar`}
+        className="h-10 w-10 rounded-full border border-slate-800 object-cover"
+        referrerPolicy="no-referrer"
+        src={user.avatarUrl}
+      />
+    );
+  }
+
+  return (
+    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-800 bg-cyan-300 text-sm font-semibold text-slate-950">
+      {initialsForUsername(user.username)}
+    </span>
+  );
+}
+
+function FollowListPanel({
+  activeList,
+  listState,
+  onClose,
+  onLoadMore
+}: {
+  activeList: FollowListKind;
+  listState: FollowListState;
+  onClose: () => void;
+  onLoadMore: () => void;
+}) {
+  const title = activeList === "followers" ? "Followers" : "Following";
+
+  return (
+    <section className="mt-8 rounded-md border border-slate-800 bg-slate-900/70 p-4">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-sm font-semibold uppercase text-slate-400">{title}</h2>
+        <button
+          className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+          onClick={onClose}
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+
+      {listState.status === "loading" && listState.users.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-400">Loading {title.toLowerCase()}...</p>
+      ) : null}
+
+      {listState.status === "error" ? (
+        <p className="mt-4 rounded-md border border-rose-900/60 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">
+          {listState.error}
+        </p>
+      ) : null}
+
+      {listState.status === "loaded" && listState.users.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-400">No {title.toLowerCase()} yet.</p>
+      ) : null}
+
+      {listState.users.length > 0 ? (
+        <ul className="mt-4 divide-y divide-slate-800">
+          {listState.users.map((user) => (
+            <li key={user.id}>
+              <a
+                className="flex items-center gap-3 py-3 transition hover:text-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                href={`/users/${encodeURIComponent(user.username)}`}
+              >
+                <FollowListAvatar user={user} />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold text-slate-100">
+                    {user.username}
+                  </span>
+                  <span className="block truncate text-xs text-slate-500">
+                    {user.bio || "No bio yet."}
+                  </span>
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {listState.status === "loaded" && listState.nextCursor ? (
+        <button
+          className="mt-4 rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+          onClick={onLoadMore}
+          type="button"
+        >
+          Load more
+        </button>
+      ) : null}
+    </section>
   );
 }
 
@@ -196,13 +357,23 @@ function ProfileSkeleton() {
 }
 
 export function ProfilePage({ username }: { username: string }) {
-  const { user: authenticatedUser } = useAuth();
+  const { signIn, token, user: authenticatedUser } = useAuth();
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeFollowList, setActiveFollowList] = useState<FollowListKind | null>(null);
+  const [followError, setFollowError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
   const [loadState, setLoadState] = useState<ProfileLoadState>({
     error: null,
     profile: null,
     status: "loading"
+  });
+  const [followListState, setFollowListState] = useState<FollowListState>({
+    error: null,
+    nextCursor: null,
+    status: "idle",
+    users: []
   });
   const [postsState, setPostsState] = useState<PostsLoadState>({
     error: null,
@@ -252,6 +423,19 @@ export function ProfilePage({ username }: { username: string }) {
       abortController.abort();
     };
   }, [username]);
+
+  useEffect(() => {
+    setActiveFollowList(null);
+    setFollowError(null);
+    setIsFollowing(false);
+    setIsUpdatingFollow(false);
+    setFollowListState({
+      error: null,
+      nextCursor: null,
+      status: "idle",
+      users: []
+    });
+  }, [authenticatedUser?.id, username]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -350,6 +534,98 @@ export function ProfilePage({ username }: { username: string }) {
     });
   }
 
+  function updateProfileCounts(nextCounts: Partial<ProfileCounts>): void {
+    setLoadState((currentLoadState) => {
+      if (currentLoadState.status !== "loaded") {
+        return currentLoadState;
+      }
+
+      return {
+        error: null,
+        profile: {
+          counts: {
+            ...currentLoadState.profile.counts,
+            ...nextCounts
+          },
+          user: currentLoadState.profile.user
+        },
+        status: "loaded"
+      };
+    });
+  }
+
+  async function handleFollowToggle(): Promise<void> {
+    if (!token) {
+      signIn();
+      return;
+    }
+
+    setFollowError(null);
+    setIsUpdatingFollow(true);
+
+    try {
+      const response = await apiJson<FollowToggleResponse>(
+        `/users/${encodeURIComponent(username)}/follow`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          method: isFollowing ? "DELETE" : "POST"
+        }
+      );
+
+      setIsFollowing(response.followed);
+      updateProfileCounts({
+        followers: response.counts.followers,
+        following: response.counts.following
+      });
+    } catch (error: unknown) {
+      setFollowError(
+        error instanceof Error ? error.message : "Unable to update follow"
+      );
+    } finally {
+      setIsUpdatingFollow(false);
+    }
+  }
+
+  async function loadFollowList(kind: FollowListKind, cursor?: string): Promise<void> {
+    setActiveFollowList(kind);
+    setFollowListState((currentState) => ({
+      error: null,
+      nextCursor: null,
+      status: "loading",
+      users: cursor ? currentState.users : []
+    }));
+
+    try {
+      const query = new URLSearchParams({
+        limit: "50"
+      });
+
+      if (cursor) {
+        query.set("cursor", cursor);
+      }
+
+      const response = await apiJson<FollowListResponse>(
+        `/users/${encodeURIComponent(username)}/${kind}?${query.toString()}`
+      );
+
+      setFollowListState((currentState) => ({
+        error: null,
+        nextCursor: response.nextCursor,
+        status: "loaded",
+        users: cursor ? [...currentState.users, ...response.users] : response.users
+      }));
+    } catch (error: unknown) {
+      setFollowListState((currentState) => ({
+        error: error instanceof Error ? error.message : `Unable to load ${kind}`,
+        nextCursor: null,
+        status: "error",
+        users: cursor ? currentState.users : []
+      }));
+    }
+  }
+
   const joinedDate = useMemo(() => {
     if (loadState.status !== "loaded") {
       return null;
@@ -394,6 +670,18 @@ export function ProfilePage({ username }: { username: string }) {
                 {isEditing ? "Close" : "Edit"}
               </button>
             ) : null}
+            {!canEditProfile ? (
+              <button
+                className="rounded-md border border-cyan-300 bg-cyan-300 px-3 py-1.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isUpdatingFollow}
+                onClick={() => {
+                  void handleFollowToggle();
+                }}
+                type="button"
+              >
+                {isUpdatingFollow ? "Saving" : isFollowing ? "Following" : "Follow"}
+              </button>
+            ) : null}
             {joinedDate ? (
               <span className="rounded-md border border-slate-800 px-2.5 py-1 text-xs font-medium text-slate-400">
                 Joined {joinedDate}
@@ -401,13 +689,38 @@ export function ProfilePage({ username }: { username: string }) {
             ) : null}
           </div>
           <div className="mt-5">
-            <ProfileStats counts={counts} />
+            <ProfileStats
+              counts={counts}
+              onSelectFollowList={(kind) => {
+                void loadFollowList(kind);
+              }}
+            />
           </div>
+          {followError ? (
+            <p className="mt-3 rounded-md border border-rose-900/60 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">
+              {followError}
+            </p>
+          ) : null}
           <p className="mt-5 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
             {user.bio || "No bio yet."}
           </p>
         </div>
       </div>
+
+      {activeFollowList ? (
+        <FollowListPanel
+          activeList={activeFollowList}
+          listState={followListState}
+          onClose={() => {
+            setActiveFollowList(null);
+          }}
+          onLoadMore={() => {
+            if (followListState.status === "loaded" && followListState.nextCursor) {
+              void loadFollowList(activeFollowList, followListState.nextCursor);
+            }
+          }}
+        />
+      ) : null}
 
       {isEditing && authenticatedUser ? (
         <div className="mt-8">
