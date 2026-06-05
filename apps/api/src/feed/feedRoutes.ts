@@ -9,6 +9,11 @@ const DEFAULT_FEED_LIMIT = 20;
 const MAX_FEED_LIMIT = 60;
 
 const feedPostSelect = {
+  _count: {
+    select: {
+      likes: true
+    }
+  },
   caption: true,
   createdAt: true,
   id: true,
@@ -37,6 +42,7 @@ type FollowedFeedRow = {
   createdAt: Date;
   id: string;
   imageUrl: string;
+  likeCount: bigint | number;
   updatedAt: Date;
   userId: string;
 };
@@ -113,6 +119,9 @@ async function followsTableExists(): Promise<boolean> {
 function mapFollowedFeedRow(row: FollowedFeedRow) {
   return {
     caption: row.caption,
+    counts: {
+      likes: Number(row.likeCount)
+    },
     createdAt: row.createdAt,
     id: row.id,
     imageUrl: row.imageUrl,
@@ -123,6 +132,32 @@ function mapFollowedFeedRow(row: FollowedFeedRow) {
       username: row.authorUsername
     },
     userId: row.userId
+  };
+}
+
+function mapFeedPost(post: {
+  _count: {
+    likes: number;
+  };
+  caption: string | null;
+  createdAt: Date;
+  id: string;
+  imageUrl: string;
+  updatedAt: Date;
+  user: {
+    avatarUrl: string | null;
+    id: string;
+    username: string;
+  };
+  userId: string;
+}) {
+  const { _count, ...postFields } = post;
+
+  return {
+    ...postFields,
+    counts: {
+      likes: _count.likes
+    }
   };
 }
 
@@ -163,7 +198,7 @@ export const getGlobalFeed: RequestHandler = async (req, res, next) => {
 
     res.json({
       nextCursor: posts.length > limit ? pagePosts.at(-1)?.id : null,
-      posts: pagePosts
+      posts: pagePosts.map(mapFeedPost)
     });
   } catch (error) {
     next(error);
@@ -192,12 +227,14 @@ export const getFollowedFeed: RequestHandler = async (req, res, next) => {
         p.caption,
         p.created_at AS "createdAt",
         p.updated_at AS "updatedAt",
+        COUNT(l.id) AS "likeCount",
         u.id AS "authorId",
         u.username AS "authorUsername",
         u.avatar_url AS "authorAvatarUrl"
       FROM posts p
       INNER JOIN users u ON u.id = p.user_id
       INNER JOIN follows f ON f.following_id = p.user_id
+      LEFT JOIN likes l ON l.post_id = p.id
       WHERE f.follower_id = ${user.id}
         ${
           cursor
@@ -207,6 +244,7 @@ export const getFollowedFeed: RequestHandler = async (req, res, next) => {
               )`
             : Prisma.empty
         }
+      GROUP BY p.id, u.id
       ORDER BY p.created_at DESC, p.id DESC
       LIMIT ${limit + 1}
     `;

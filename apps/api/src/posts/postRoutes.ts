@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { Router, type RequestHandler } from "express";
 import multer from "multer";
 import { requireAuth, type AuthenticatedRequest } from "../auth/authMiddleware.js";
@@ -38,6 +39,11 @@ const postImageUpload = multer({
 }).single("image");
 
 const postSelect = {
+  _count: {
+    select: {
+      likes: true
+    }
+  },
   caption: true,
   createdAt: true,
   id: true,
@@ -52,6 +58,10 @@ const postSelect = {
   },
   userId: true
 } as const;
+
+type SelectedPost = Prisma.PostGetPayload<{
+  select: typeof postSelect;
+}>;
 
 function parseOptionalQueryString(
   value: unknown,
@@ -143,6 +153,40 @@ function parseUsernameParam(value: string | undefined): string {
   return username;
 }
 
+function serializePost(post: SelectedPost) {
+  const { _count, ...postFields } = post;
+
+  return {
+    ...postFields,
+    counts: {
+      likes: _count.likes
+    }
+  };
+}
+
+async function getPostLikeCount(postId: string): Promise<number> {
+  return prisma.like.count({
+    where: {
+      postId
+    }
+  });
+}
+
+async function ensurePostExists(postId: string): Promise<void> {
+  const post = await prisma.post.findUnique({
+    select: {
+      id: true
+    },
+    where: {
+      id: postId
+    }
+  });
+
+  if (!post) {
+    throw new HttpError(404, "Post not found", "POST_NOT_FOUND");
+  }
+}
+
 const parsePostUpload: RequestHandler = (req, res, next) => {
   postImageUpload(req, res, (error: unknown) => {
     if (error instanceof multer.MulterError) {
@@ -169,7 +213,7 @@ export const getPost: RequestHandler = async (req, res, next) => {
     }
 
     res.json({
-      post
+      post: serializePost(post)
     });
   } catch (error) {
     next(error);
@@ -247,7 +291,7 @@ export const listPostsByUser: RequestHandler = async (req, res, next) => {
 
     res.json({
       nextCursor: posts.length > limit ? pagePosts.at(-1)?.id : null,
-      posts: pagePosts
+      posts: pagePosts.map(serializePost)
     });
   } catch (error) {
     next(error);
@@ -289,7 +333,64 @@ const createPost: RequestHandler = async (req, res, next) => {
     });
 
     res.status(201).json({
-      post
+      post: serializePost(post)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const likePost: RequestHandler = async (req, res, next) => {
+  try {
+    const { user } = req as AuthenticatedRequest;
+    const postId = parsePostId(req.params.postId);
+
+    await ensurePostExists(postId);
+    await prisma.like.upsert({
+      create: {
+        postId,
+        userId: user.id
+      },
+      update: {},
+      where: {
+        userId_postId: {
+          postId,
+          userId: user.id
+        }
+      }
+    });
+
+    res.json({
+      counts: {
+        likes: await getPostLikeCount(postId)
+      },
+      liked: true,
+      postId
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const unlikePost: RequestHandler = async (req, res, next) => {
+  try {
+    const { user } = req as AuthenticatedRequest;
+    const postId = parsePostId(req.params.postId);
+
+    await ensurePostExists(postId);
+    await prisma.like.deleteMany({
+      where: {
+        postId,
+        userId: user.id
+      }
+    });
+
+    res.json({
+      counts: {
+        likes: await getPostLikeCount(postId)
+      },
+      liked: false,
+      postId
     });
   } catch (error) {
     next(error);
@@ -298,5 +399,7 @@ const createPost: RequestHandler = async (req, res, next) => {
 
 export const postRouter = Router();
 
+postRouter.post("/:postId/like", requireAuth, likePost);
+postRouter.delete("/:postId/like", requireAuth, unlikePost);
 postRouter.get("/:postId", getPost);
 postRouter.post("/", requireAuth, parsePostUpload, createPost);
