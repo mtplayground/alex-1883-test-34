@@ -4,7 +4,7 @@ myClawTeam is a self-hostable social photo app. Users sign in with Google, creat
 
 ## Current Capabilities
 
-- Google OAuth backend flow provisions users on first login.
+- Google OAuth backend flow provisions users on first login, validates required Google settings, and shows a clear configuration page when sign-in is not configured.
 - JWT auth protects current-user, profile edit, post creation, like/comment, and follow routes.
 - Profiles expose username, avatar URL, bio, post count, follower count, and following count.
 - Profile UI supports editing profile fields and uploading an avatar.
@@ -28,6 +28,7 @@ myClawTeam is a self-hostable social photo app. Users sign in with Google, creat
 ## Conventions
 
 - Required runtime configuration is documented in `.env.example`.
+- Google OAuth setup is documented in the self-hosted deployment README, including Google Cloud origins, redirect URI, required env vars, and verification checklist.
 - API errors use a centralized `{ error: { code, message } }` response shape.
 - Use `npm run build:self-hosted` for production builds.
 - Use `npm run start:self-hosted` to run migrations on boot and start API plus web preview.
