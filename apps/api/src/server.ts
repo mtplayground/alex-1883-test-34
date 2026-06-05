@@ -5,6 +5,7 @@ import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { isHttpError } from "./http/errors.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
+import { uploadMyAvatar } from "./users/avatarRoute.js";
 import { getMe, patchMe } from "./users/meRoute.js";
 import { getUserProfile } from "./users/profileRoute.js";
 
@@ -68,6 +69,12 @@ app.get("/", rootHandler);
 app.get("/api/health", healthHandler);
 app.get("/me", requireAuth, getMe);
 app.patch("/me", requireAuth, patchMe);
+app.post(
+  "/me/avatar",
+  requireAuth,
+  express.raw({ limit: "5mb", type: "image/*" }),
+  uploadMyAvatar
+);
 app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
 app.use(notFoundHandler);

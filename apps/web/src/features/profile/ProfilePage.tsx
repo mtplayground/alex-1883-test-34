@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, apiJson } from "../../lib/api";
+import { useAuth, type CurrentUser } from "../auth/AuthContext";
+import { EditProfileForm } from "./EditProfileForm";
 
 type ProfileCounts = {
   followers: number;
@@ -133,6 +135,8 @@ function ProfileSkeleton() {
 }
 
 export function ProfilePage({ username }: { username: string }) {
+  const { user: authenticatedUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
   const [loadState, setLoadState] = useState<ProfileLoadState>({
     error: null,
     profile: null,
@@ -182,6 +186,31 @@ export function ProfilePage({ username }: { username: string }) {
     };
   }, [username]);
 
+  function handleProfileSaved(updatedUser: CurrentUser): void {
+    setIsEditing(false);
+    setLoadState((currentLoadState) => {
+      if (currentLoadState.status !== "loaded") {
+        return currentLoadState;
+      }
+
+      return {
+        error: null,
+        profile: {
+          counts: currentLoadState.profile.counts,
+          user: {
+            avatarUrl: updatedUser.avatarUrl,
+            bio: updatedUser.bio,
+            createdAt: updatedUser.createdAt,
+            id: updatedUser.id,
+            updatedAt: updatedUser.updatedAt,
+            username: updatedUser.username
+          }
+        },
+        status: "loaded"
+      };
+    });
+  }
+
   const joinedDate = useMemo(() => {
     if (loadState.status !== "loaded") {
       return null;
@@ -206,6 +235,7 @@ export function ProfilePage({ username }: { username: string }) {
   }
 
   const { counts, user } = loadState.profile;
+  const canEditProfile = authenticatedUser?.id === user.id;
 
   return (
     <section>
@@ -216,6 +246,15 @@ export function ProfilePage({ username }: { username: string }) {
             <h1 className="truncate text-3xl font-semibold text-slate-100 sm:text-4xl">
               {user.username}
             </h1>
+            {canEditProfile ? (
+              <button
+                className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-100 transition hover:border-slate-500 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                onClick={() => setIsEditing((current) => !current)}
+                type="button"
+              >
+                {isEditing ? "Close" : "Edit"}
+              </button>
+            ) : null}
             {joinedDate ? (
               <span className="rounded-md border border-slate-800 px-2.5 py-1 text-xs font-medium text-slate-400">
                 Joined {joinedDate}
@@ -230,6 +269,16 @@ export function ProfilePage({ username }: { username: string }) {
           </p>
         </div>
       </div>
+
+      {isEditing && authenticatedUser ? (
+        <div className="mt-8">
+          <EditProfileForm
+            onCancel={() => setIsEditing(false)}
+            onSaved={handleProfileSaved}
+            user={authenticatedUser}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-10 border-t border-slate-800 pt-6">
         <div className="mb-4 flex items-center justify-between">
