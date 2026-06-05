@@ -37,6 +37,7 @@ const envSchema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: optionalString,
   GOOGLE_OAUTH_CLIENT_SECRET: optionalString,
   HOST: z.string().min(1).default("0.0.0.0"),
+  JWT_EXPIRES_IN: z.string().min(1).default("7d"),
   JWT_SECRET: optionalString,
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   OBJECT_STORAGE_ACCESS_KEY_ID: optionalString,
@@ -97,6 +98,7 @@ function readConfig() {
       clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET
     },
     jwt: {
+      expiresIn: env.JWT_EXPIRES_IN,
       secret: env.JWT_SECRET
     },
     nodeEnv: env.NODE_ENV,
