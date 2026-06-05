@@ -34,9 +34,10 @@ const portSchema = z.preprocess((value) => {
 const envSchema = z.object({
   CORS_ORIGIN: optionalString,
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  GOOGLE_OAUTH_CALLBACK_URL: optionalString,
-  GOOGLE_OAUTH_CLIENT_ID: optionalString,
-  GOOGLE_OAUTH_CLIENT_SECRET: optionalString,
+  GOOGLE_BASE_URL: optionalString,
+  GOOGLE_CALLBACK_URL: optionalString,
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
   HOST: z.string().min(1).default("0.0.0.0"),
   JWT_EXPIRES_IN: z.string().min(1).default("7d"),
   JWT_SECRET: optionalString,
@@ -94,9 +95,10 @@ function readConfig() {
   return Object.freeze({
     databaseUrl: env.DATABASE_URL,
     googleOAuth: {
-      callbackUrl: env.GOOGLE_OAUTH_CALLBACK_URL,
-      clientId: env.GOOGLE_OAUTH_CLIENT_ID,
-      clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET
+      baseUrl: env.GOOGLE_BASE_URL,
+      callbackUrl: env.GOOGLE_CALLBACK_URL,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET
     },
     jwt: {
       expiresIn: env.JWT_EXPIRES_IN,
