@@ -43,6 +43,7 @@ const envSchema = z.object({
   OBJECT_STORAGE_BUCKET: optionalString,
   OBJECT_STORAGE_ENDPOINT: optionalString,
   OBJECT_STORAGE_PREFIX: z.string().min(1).default("uploads"),
+  OBJECT_STORAGE_PUBLIC_BASE_URL: optionalString,
   OBJECT_STORAGE_REGION: optionalString,
   OBJECT_STORAGE_SECRET_ACCESS_KEY: optionalString,
   PORT: portSchema
@@ -104,6 +105,7 @@ function readConfig() {
       bucket: env.OBJECT_STORAGE_BUCKET,
       endpoint: env.OBJECT_STORAGE_ENDPOINT,
       prefix: env.OBJECT_STORAGE_PREFIX,
+      publicBaseUrl: env.OBJECT_STORAGE_PUBLIC_BASE_URL,
       region: env.OBJECT_STORAGE_REGION,
       secretAccessKey: env.OBJECT_STORAGE_SECRET_ACCESS_KEY
     },
