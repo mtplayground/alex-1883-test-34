@@ -11,7 +11,7 @@ import { ApiError, apiJson, apiUrl } from "../../lib/api";
 
 const AUTH_TOKEN_STORAGE_KEY = "auth.token";
 
-type CurrentUser = {
+export type CurrentUser = {
   avatarUrl: string | null;
   bio: string | null;
   createdAt: string;
@@ -31,6 +31,7 @@ type AuthContextValue = {
   signOut: () => void;
   status: AuthStatus;
   token: string | null;
+  updateUser: (user: CurrentUser) => void;
   user: CurrentUser | null;
 };
 
@@ -98,6 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStatus("anonymous");
       setError(null);
     }
+  }, []);
+
+  const updateUser = useCallback((nextUser: CurrentUser) => {
+    setUser(nextUser);
+    setStatus("authenticated");
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -170,9 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       status,
       token,
+      updateUser,
       user
     }),
-    [error, setToken, signIn, signOut, status, token, user]
+    [error, setToken, signIn, signOut, status, token, updateUser, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
