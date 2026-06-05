@@ -19,8 +19,32 @@ import {
 
 const app = express();
 const { host, port } = appConfig.server;
+const allowedCorsOrigins = appConfig.server.corsOrigin
+  ?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.disable("x-powered-by");
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowsAnyOrigin = allowedCorsOrigins?.includes("*") ?? false;
+  const allowsRequestOrigin =
+    typeof origin === "string" && allowedCorsOrigins?.includes(origin);
+
+  if (origin && (allowsAnyOrigin || allowsRequestOrigin)) {
+    res.setHeader("Access-Control-Allow-Origin", allowsAnyOrigin ? "*" : origin);
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "DELETE, GET, OPTIONS, PATCH, POST");
+    res.setHeader("Access-Control-Max-Age", "600");
+  }
+
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+
+  next();
+});
 app.use(express.json({ limit: "1mb" }));
 
 const rootHandler: RequestHandler = (_req, res) => {
