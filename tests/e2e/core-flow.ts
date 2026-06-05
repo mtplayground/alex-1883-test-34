@@ -92,6 +92,13 @@ type FollowListResponse = {
   }>;
 };
 
+type ErrorResponse = {
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
 function assertCondition(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
@@ -348,10 +355,75 @@ async function runCoreFlow(): Promise<void> {
     const authorToken = issueTestJwt(author);
     const viewerToken = issueTestJwt(viewer);
 
+    const missingAuth = await apiJson<ErrorResponse>(baseUrl, "/me", {}, 401);
+    assertCondition(
+      missingAuth.error.code === "AUTH_REQUIRED",
+      "Missing auth returns centralized AUTH_REQUIRED error"
+    );
+
+    const lowerCaseBearerMe = await apiJson<AuthenticatedUserResponse>(baseUrl, "/me", {
+      headers: {
+        Authorization: `bearer ${authorToken}`
+      }
+    });
+    assertCondition(
+      lowerCaseBearerMe.user.username === author.username,
+      "Lowercase bearer scheme authenticates"
+    );
+
     const me = await apiJson<AuthenticatedUserResponse>(baseUrl, "/me", {
       headers: authHeader(authorToken)
     });
     assertCondition(me.user.username === author.username, "JWT login returned author");
+
+    const malformedJson = await apiJson<ErrorResponse>(
+      baseUrl,
+      "/me",
+      {
+        body: "{",
+        headers: {
+          ...authHeader(authorToken),
+          "Content-Type": "application/json"
+        },
+        method: "PATCH"
+      },
+      400
+    );
+    assertCondition(
+      malformedJson.error.code === "INVALID_JSON",
+      "Malformed JSON returns centralized INVALID_JSON error"
+    );
+
+    const invalidProfile = await apiJson<ErrorResponse>(
+      baseUrl,
+      "/me",
+      {
+        body: JSON.stringify({
+          username: "Invalid Name"
+        }),
+        headers: {
+          ...authHeader(authorToken),
+          "Content-Type": "application/json"
+        },
+        method: "PATCH"
+      },
+      400
+    );
+    assertCondition(
+      invalidProfile.error.code === "INVALID_PROFILE_UPDATE",
+      "Invalid profile input returns validation error code"
+    );
+
+    const missingRoute = await apiJson<ErrorResponse>(
+      baseUrl,
+      "/missing-route",
+      {},
+      404
+    );
+    assertCondition(
+      missingRoute.error.code === "ROUTE_NOT_FOUND",
+      "Missing routes return centralized ROUTE_NOT_FOUND error"
+    );
 
     const postResponse = await createPost(baseUrl, authorToken, author);
     const { post } = postResponse;
