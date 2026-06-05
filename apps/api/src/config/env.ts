@@ -32,6 +32,7 @@ const portSchema = z.preprocess((value) => {
 }, z.number().int().min(1).max(65535));
 
 const envSchema = z.object({
+  CORS_ORIGIN: optionalString,
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   GOOGLE_OAUTH_CALLBACK_URL: optionalString,
   GOOGLE_OAUTH_CLIENT_ID: optionalString,
@@ -112,6 +113,7 @@ function readConfig() {
       secretAccessKey: env.OBJECT_STORAGE_SECRET_ACCESS_KEY
     },
     server: {
+      corsOrigin: env.CORS_ORIGIN,
       host: env.HOST,
       port: env.PORT
     }

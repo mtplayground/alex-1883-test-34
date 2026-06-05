@@ -29,6 +29,7 @@ export default [
   {
     files: [
       "apps/api/**/*.{ts,tsx}",
+      "scripts/**/*.{js,mjs,cjs}",
       "tests/**/*.{ts,tsx}",
       "*.config.js",
       "eslint.config.js"
