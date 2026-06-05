@@ -6,8 +6,10 @@ import { verifyJwt } from "./jwt.js";
 export type AuthenticatedUser = {
   avatarUrl: string | null;
   bio: string | null;
+  createdAt: Date;
   email: string;
   id: string;
+  updatedAt: Date;
   username: string;
 };
 
@@ -37,8 +39,10 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
       select: {
         avatarUrl: true,
         bio: true,
+        createdAt: true,
         email: true,
         id: true,
+        updatedAt: true,
         username: true
       },
       where: {
