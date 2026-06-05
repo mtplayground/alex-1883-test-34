@@ -1,0 +1,54 @@
+Architecture plan for alex-1883-test-34
+
+Product context
+- Product name/brand source: no PRODUCT.md exists in the repository at setup time. The only repository-provided product identifier is README.md's "alex-1883-test-34"; issue #5 also names "myClawTeam Object Storage" as the storage service context. Future work should use PRODUCT.md if added, otherwise only issue-provided names.
+
+Module structure
+- Root workspace: package.json with npm workspaces for apps/web and apps/api, shared TypeScript, lint, format, test, build, and dev scripts.
+- apps/web: React + Vite + Tailwind app. Organize as src/app, src/routes, src/components, src/features/auth, src/features/profile, src/features/posts, src/features/feed, src/features/social, src/lib/api, and src/types.
+- apps/api: Express TypeScript service. Organize as src/server.ts, src/app.ts, src/config, src/middleware, src/routes, src/controllers, src/services, src/repositories, src/lib, src/validators, and src/types.
+- packages/shared: optional shared DTOs, API response shapes, pagination types, and validation schemas once frontend/backend contracts stabilize.
+- prisma: Prisma schema and migrations for users, posts, likes, comments, and follows.
+- tests/e2e: Playwright or equivalent end-to-end tests for the full login -> post -> feed -> like/comment -> follow flow.
+
+Backend design
+- Express exposes a versioned API prefix, likely /api, with route modules for auth, current user, users, posts, feed, likes, comments, and follows.
+- Prisma is the single database access layer. Keep direct Prisma calls in repository/service modules rather than route handlers.
+- Config loads environment variables once at process start and validates required values for DATABASE_URL, Object Storage credentials, Google OAuth credentials, JWT secret, client URL, and server port.
+- Auth uses Google OAuth callback provisioning, then issues an application JWT. Auth middleware attaches the current user to the request for protected routes.
+- Object Storage uses an S3-compatible client with small helpers for upload, object key generation, and public/signed URL construction. Route handlers should not know provider-specific details.
+- Input validation should be centralized with schemas for params, query, and body. Error middleware should normalize validation, auth, not-found, and server errors.
+
+Frontend design
+- React Router handles pages for feed, profile, edit profile, create post, and post detail.
+- A central API client owns base URL, JSON parsing, auth headers, upload requests, and error mapping.
+- Auth context owns token persistence, /me loading, sign-in redirect, sign-out, and current user state.
+- Feature folders should contain UI, hooks, and API functions for each domain. Shared components should stay generic.
+- Infinite scroll should be implemented through a reusable paginated query hook once the feed API exists.
+
+Data model outline
+- users: id, google_id, email, username, avatar_url, bio, created_at, updated_at. google_id, email, and username should be unique.
+- posts: id, user_id, image_url or object_key plus resolved URL, caption, created_at, updated_at.
+- likes: id or composite key, user_id, post_id, created_at, unique(user_id, post_id).
+- comments: id, user_id, post_id, body, created_at, updated_at.
+- follows: follower_id, following_id, created_at, unique(follower_id, following_id), with application or DB guard against self-follow.
+
+Issue dependency map
+- Foundation: #1 scaffold, #2 TypeScript/lint/format, #4 environment config.
+- Infrastructure: #3 Prisma/PostgreSQL, #5 Object Storage.
+- Users/auth: #6 users model, #7 Google OAuth provisioning, #8 JWT middleware, #9 /me, #10 auth context/sign-in, #11 logged-in user display.
+- Profiles: #12 profile read API, #13 profile edit API, #14 profile page, #15 edit profile UI.
+- Posts: #16 posts model, #17 upload/create-post API, #18 post detail/list-by-user API, #19 create-post UI, #20 post detail UI.
+- Feed: #27 follows model should land before followed-feed behavior; #21 feed API can then support followed/global pagination, followed by #22 feed UI.
+- Engagement: #23 likes/comments models, #24 like API, #25 comments API, #26 like/comment UI.
+- Social follows: #28 follow APIs and lists, then #29 profile follow controls and lists.
+- Hardening/release: #30 E2E core flow, #31 error handling and validation review, #32 self-hosted deployment prep.
+
+Key decisions
+- Use TypeScript across frontend and backend from the start to keep API contracts explicit.
+- Keep frontend and backend as separate workspace apps with a shared package only for stable cross-boundary types.
+- Use Prisma migrations as the authoritative schema history.
+- Store uploaded binary objects outside PostgreSQL; persist URLs/object keys and metadata in posts/users.
+- Prefer cursor-based pagination for feed and post lists because reverse chronological scrolling is a core workflow.
+- Keep authentication stateless at the API layer with JWTs, while keeping user identity and profile data in PostgreSQL.
+- Defer broad refactors until issue-specific work reveals real shared abstractions.
