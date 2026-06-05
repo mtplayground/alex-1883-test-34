@@ -1,11 +1,12 @@
 import { PrismaClient } from "@prisma/client";
+import { appConfig } from "../config/env.js";
 
 const globalForPrisma = globalThis as typeof globalThis & {
   prismaClient?: PrismaClient;
 };
 
 export function isDatabaseConfigured(): boolean {
-  return Boolean(process.env.DATABASE_URL);
+  return Boolean(appConfig.databaseUrl);
 }
 
 export function assertDatabaseConfigured(): void {
