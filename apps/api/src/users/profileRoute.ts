@@ -31,6 +31,11 @@ export const getUserProfile: RequestHandler = async (req, res, next) => {
     const username = parseUsernameParam(req.params.username);
     const user = await prisma.user.findUnique({
       select: {
+        _count: {
+          select: {
+            posts: true
+          }
+        },
         avatarUrl: true,
         bio: true,
         createdAt: true,
@@ -47,9 +52,14 @@ export const getUserProfile: RequestHandler = async (req, res, next) => {
       throw new HttpError(404, "User not found", "USER_NOT_FOUND");
     }
 
+    const { _count, ...profileUser } = user;
+
     res.json({
-      counts: emptyProfileCounts,
-      user
+      counts: {
+        ...emptyProfileCounts,
+        posts: _count.posts
+      },
+      user: profileUser
     });
   } catch (error) {
     next(error);

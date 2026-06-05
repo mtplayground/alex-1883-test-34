@@ -4,6 +4,7 @@ import { requireAuth } from "./auth/authMiddleware.js";
 import { appConfig } from "./config/env.js";
 import { isDatabaseConfigured } from "./db/prisma.js";
 import { isHttpError } from "./http/errors.js";
+import { postRouter } from "./posts/postRoutes.js";
 import { isObjectStorageConfigured } from "./storage/objectStorage.js";
 import { uploadMyAvatar } from "./users/avatarRoute.js";
 import { getMe, patchMe } from "./users/meRoute.js";
@@ -77,6 +78,7 @@ app.post(
 );
 app.get("/users/:username", getUserProfile);
 app.use("/api/auth", authRouter);
+app.use("/posts", postRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
