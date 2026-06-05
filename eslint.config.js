@@ -27,7 +27,12 @@ export default [
     }
   },
   {
-    files: ["apps/api/**/*.{ts,tsx}", "*.config.js", "eslint.config.js"],
+    files: [
+      "apps/api/**/*.{ts,tsx}",
+      "tests/**/*.{ts,tsx}",
+      "*.config.js",
+      "eslint.config.js"
+    ],
     languageOptions: {
       globals: globals.node
     }
