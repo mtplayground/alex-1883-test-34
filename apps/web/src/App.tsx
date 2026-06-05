@@ -1,41 +1,32 @@
 import { SignInButton } from "./features/auth/SignInButton";
-
-const workspaceItems = [
-  "React frontend scaffolded with Vite",
-  "Tailwind CSS pipeline configured",
-  "Express backend workspace ready for API routes"
-] as const;
+import { useAuth } from "./features/auth/AuthContext";
+import { ProfilePage } from "./features/profile/ProfilePage";
 
 export default function App() {
+  const { error, status, user } = useAuth();
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <header className="fixed inset-x-0 top-0 z-10 border-b border-slate-900/80 bg-slate-950/90 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-end px-6">
+        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
+          <a className="text-sm font-semibold text-slate-100" href="/">
+            Profile
+          </a>
           <SignInButton />
         </div>
       </header>
-      <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-6 py-16">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-300">
-          Issue #1
-        </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight sm:text-5xl">
-          React and Tailwind frontend workspace
-        </h1>
-        <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-          This starter app provides the first frontend surface while later issues add
-          authentication, profiles, posts, feeds, and social interactions.
-        </p>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          {workspaceItems.map((item) => (
-            <div
-              className="rounded-lg border border-slate-800 bg-slate-900/80 p-5 shadow-sm"
-              key={item}
-            >
-              <p className="text-sm leading-6 text-slate-200">{item}</p>
-            </div>
-          ))}
-        </div>
+      <section className="mx-auto w-full max-w-5xl px-6 pb-16 pt-28">
+        {user ? (
+          <ProfilePage username={user.username} />
+        ) : (
+          <div className="rounded-md border border-slate-800 bg-slate-900/70 p-6">
+            <h1 className="text-2xl font-semibold text-slate-100">Profile</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+              {status === "error" && error ? error : "Sign in to view your profile."}
+            </p>
+          </div>
+        )}
       </section>
     </main>
   );
