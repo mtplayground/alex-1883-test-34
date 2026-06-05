@@ -2,6 +2,7 @@
   "name": "alex-1883-test-34",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*"
   ],
@@ -9,10 +10,28 @@
     "build": "npm run build --workspaces",
     "dev:api": "npm run dev --workspace @alex-1883-test-34/api",
     "dev:web": "npm run dev --workspace @alex-1883-test-34/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
     "start:api": "npm run start --workspace @alex-1883-test-34/api",
-    "start:web": "npm run preview --workspace @alex-1883-test-34/web"
+    "start:web": "npm run preview --workspace @alex-1883-test-34/web",
+    "typecheck": "npm run typecheck --workspaces"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0"
   }
 }

@@ -2,7 +2,7 @@ const workspaceItems = [
   "React frontend scaffolded with Vite",
   "Tailwind CSS pipeline configured",
   "Express backend workspace ready for API routes"
-];
+] as const;
 
 export default function App() {
   return (
@@ -15,9 +15,8 @@ export default function App() {
           React and Tailwind frontend workspace
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-          This starter app provides the first frontend surface while later
-          issues add authentication, profiles, posts, feeds, and social
-          interactions.
+          This starter app provides the first frontend surface while later issues add
+          authentication, profiles, posts, feeds, and social interactions.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
