@@ -1,9 +1,25 @@
 import { SignInButton } from "./features/auth/SignInButton";
 import { useAuth } from "./features/auth/AuthContext";
+import { PostDetailPage } from "./features/posts/PostDetailPage";
 import { ProfilePage } from "./features/profile/ProfilePage";
+
+function postIdFromPathname(pathname: string): string | null {
+  const match = pathname.match(/^\/posts\/([^/]+)\/?$/);
+
+  if (!match?.[1]) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
 
 export default function App() {
   const { error, status, user } = useAuth();
+  const postId = postIdFromPathname(window.location.pathname);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -17,7 +33,9 @@ export default function App() {
       </header>
 
       <section className="mx-auto w-full max-w-5xl px-6 pb-16 pt-28">
-        {user ? (
+        {postId ? (
+          <PostDetailPage postId={postId} />
+        ) : user ? (
           <ProfilePage username={user.username} />
         ) : (
           <div className="rounded-md border border-slate-800 bg-slate-900/70 p-6">
